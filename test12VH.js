@@ -1,4 +1,4 @@
-// Form data with detailed questions and options
+
         const formData = [
             {
                 question: "Main Construction Material",
@@ -202,7 +202,6 @@
             }
         ];
 
-// Application state
 let map, marker, userCoords, vulnerabilityScore, vicinityCircle, userAddress;
 const users = [];
 const MAX_VICINITY_RADIUS = 500;
@@ -212,7 +211,6 @@ const DISASTER_STATION = {
 };
 let routeLayer = L.layerGroup();
 
-// Initialize the map
 function initMap() {
     map = L.map('map').setView(DISASTER_STATION.coords, 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -227,7 +225,6 @@ function initMap() {
     routeLayer.addTo(map);
 }
 
-// Constrain marker within vicinity circle
 function constrainMarker(e) {
     const originalPos = L.latLng(userCoords);
     const newPos = e.target.getLatLng();
@@ -244,7 +241,6 @@ function constrainMarker(e) {
     }
 }
 
-// Update address from marker position
 async function updateAddressFromMarker() {
     if (!marker) return;
     const newCoords = marker.getLatLng();
@@ -261,7 +257,6 @@ async function updateAddressFromMarker() {
     }
 }
 
-// Process location and set up map elements
 function processLocation(coords) {
     map.setView(coords, 16);
 
@@ -290,7 +285,6 @@ function processLocation(coords) {
     generateQuestionnaire();
 }
 
-// Search address using OpenStreetMap Nominatim
 async function searchAddress() {
     const addressInput = document.getElementById('address').value;
     if (!addressInput) return;
@@ -328,7 +322,6 @@ function getCurrentLocation() {
     }
 }
 
-// Generate questionnaire from formData
 function generateQuestionnaire() {
     const questions = document.getElementById('questions');
     questions.innerHTML = '';
@@ -346,7 +339,7 @@ function generateQuestionnaire() {
     });
 }
 
-// Calculate vulnerability score
+//vulnerability score
 function calculateScore() {
     let total = 0;
     for(let i = 1; i <= formData.length; i++) {
@@ -356,7 +349,7 @@ function calculateScore() {
     processSubmission();
 }
 
-// Calculate distance between two points
+//distance between two points
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Earth's radius in km
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -369,7 +362,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * c; // Distance in km
 }
 
-// Process user submission
+//user submission
 function processSubmission() {
     const hazardLevel = Math.floor(Math.random() * 5) + 1;
     const riskValue = (vulnerabilityScore + hazardLevel) / 2;
@@ -396,7 +389,6 @@ function processSubmission() {
     if(users.length >= 3) showPriorityList();
 }
 
-// Update records display
 function updateRecords() {
     const container = document.getElementById('records-container');
     container.innerHTML = `
@@ -432,7 +424,7 @@ function updateRecords() {
     });
 }
 
-// Update statistics
+// update stats
 function updateStats() {
     document.getElementById('total-assessments').textContent = users.length;
     
@@ -445,7 +437,7 @@ function updateStats() {
     }
 }
 
-// Show priority list
+//priority list
 function showPriorityList() {
     users.sort((a, b) => {
         const priorityA = a.risk * 0.7 + (1 / a.distance) * 0.3;
