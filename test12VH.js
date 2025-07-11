@@ -275,11 +275,8 @@ function processLocation(coords) {
         autoPan: true
     }).bindPopup('Your Location').addTo(map);
 
-    marker.on('dragend', function(e) {
-        constrainMarker(e);
-        updateAddressFromMarker();
-    });
-    
+    marker.on('drag', constrainMarker); 
+
     updateAddressFromMarker();
     document.getElementById('questionnaire-section').classList.remove('hidden');
     generateQuestionnaire();
