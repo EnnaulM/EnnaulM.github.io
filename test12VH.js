@@ -1,4 +1,5 @@
 
+
         const formData = [
             {
                 question: "Main Construction Material",
@@ -202,7 +203,7 @@
             }
         ];
 
-let map, marker, userCoords, vulnerabilityScore, vicinityCircle, userAddress;
+let map, marker, initialCoords, vulnerabilityScore, vicinityCircle, userAddress;
 const users = [];
 const MAX_VICINITY_RADIUS = 500;
 const DISASTER_STATION = {
@@ -225,17 +226,41 @@ function initMap() {
     routeLayer.addTo(map);
 }
 
+
+function createPriorityMarker(coords, index) {
+    return L.marker(coords, {
+        icon: L.divIcon({
+            className: 'priority-marker',
+            html: `<div style="background: ${index === 0 ? '#e74c3c' : index === 1 ? '#f39c12' : '#3498db'};
+                       width: 20px; 
+                       height: 20px; 
+                       border-radius: 50%; 
+                       display: flex; 
+                       justify-content: center; 
+                       align-items: center; 
+                       color: white;
+                       font-weight: bold;
+                       border: 2px solid white;
+                       box-shadow: 0 0 8px rgba(0,0,0,0.5);">
+                  ${index + 1}
+               </div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        })
+    });
+}
+
 function constrainMarker(e) {
-    const originalPos = L.latLng(userCoords);
+    const center = L.latLng(initialCoords); 
     const newPos = e.target.getLatLng();
-    const distance = originalPos.distanceTo(newPos);
+    const distance = center.distanceTo(newPos);
 
     if (distance > MAX_VICINITY_RADIUS) {
-        const originalPoint = map.project(originalPos);
+        const centerPoint = map.project(center);
         const newPoint = map.project(newPos);
-        const vector = newPoint.subtract(originalPoint);
+        const vector = newPoint.subtract(centerPoint);
         const scaledVector = vector.multiplyBy(MAX_VICINITY_RADIUS * 0.9 / distance);
-        const boundedPoint = originalPoint.add(scaledVector);
+        const boundedPoint = centerPoint.add(scaledVector);
         const boundedLatLng = map.unproject(boundedPoint);
         e.target.setLatLng(boundedLatLng);
     }
@@ -244,10 +269,9 @@ function constrainMarker(e) {
 async function updateAddressFromMarker() {
     if (!marker) return;
     const newCoords = marker.getLatLng();
-    userCoords = [newCoords.lat, newCoords.lng];
     
     try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userCoords[0]}&lon=${userCoords[1]}`);
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${newCoords.lat}&lon=${newCoords.lng}`);
         const data = await response.json();
         if (data.display_name) {
             userAddress = data.display_name;
@@ -259,6 +283,7 @@ async function updateAddressFromMarker() {
 
 function processLocation(coords) {
     map.setView(coords, 16);
+    initialCoords = coords;  
 
     if (marker) map.removeLayer(marker);
     if (vicinityCircle) map.removeLayer(vicinityCircle);
@@ -275,7 +300,11 @@ function processLocation(coords) {
         autoPan: true
     }).bindPopup('Your Location').addTo(map);
 
-    marker.on('drag', constrainMarker); 
+    
+    marker.on('drag', constrainMarker);
+    
+    
+    marker.on('dragend', updateAddressFromMarker);
     
     updateAddressFromMarker();
     document.getElementById('questionnaire-section').classList.remove('hidden');
@@ -301,7 +330,7 @@ async function searchAddress() {
     }
 }
 
-// Get current location
+
 function getCurrentLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -359,21 +388,44 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * c; // Distance in km
 }
 
+
+async function getRoute(waypoints) {
+    const waypointsStr = waypoints.map(wp => `${wp[1]},${wp[0]}`).join(';');
+    const url = `https://router.project-osrm.org/route/v1/driving/${waypointsStr}?overview=full&geometries=geojson`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.code === 'Ok') {
+            return data.routes[0].geometry.coordinates;
+        }
+        return null;
+    } catch (error) {
+        console.error('Routing error:', error);
+        return null;
+    }
+}
+
 //user submission
 function processSubmission() {
     const hazardLevel = Math.floor(Math.random() * 5) + 1;
     const riskValue = (vulnerabilityScore + hazardLevel) / 2;
     
+   
+    const markerPos = marker.getLatLng();
+    const userPosition = [markerPos.lat, markerPos.lng];
+    
     const distance = calculateDistance(
-        userCoords[0], 
-        userCoords[1],
+        userPosition[0], 
+        userPosition[1],
         DISASTER_STATION.coords[0],
         DISASTER_STATION.coords[1]
     );
 
     users.push({
         address: userAddress,
-        coords: userCoords,
+        coords: userPosition, 
         vulnerability: vulnerabilityScore.toFixed(2),
         hazard: hazardLevel.toFixed(2),
         risk: riskValue.toFixed(2),
@@ -435,7 +487,7 @@ function updateStats() {
 }
 
 //priority list
-function showPriorityList() {
+async function showPriorityList() {
     users.sort((a, b) => {
         const priorityA = a.risk * 0.7 + (1 / a.distance) * 0.3;
         const priorityB = b.risk * 0.7 + (1 / b.distance) * 0.3;
@@ -462,37 +514,41 @@ function showPriorityList() {
     });
 
     routeLayer.clearLayers();
-    const pathCoords = [DISASTER_STATION.coords];
+    
     
     users.forEach((user, index) => {
-        L.marker(user.coords, {
-            icon: L.divIcon({
-                className: 'priority-marker',
-                html: `<div style="background: ${index === 0 ? '#e74c3c' : index === 1 ? '#f39c12' : '#3498db'};
-                           width: 20px; 
-                           height: 20px; 
-                           border-radius: 50%; 
-                           display: flex; 
-                           justify-content: center; 
-                           align-items: center; 
-                           color: white;
-                           font-weight: bold;
-                           border: 2px solid white;
-                           box-shadow: 0 0 8px rgba(0,0,0,0.5);">
-                      ${index + 1}
-                   </div>`
-            })
-        }).addTo(routeLayer);
-        
-        pathCoords.push(user.coords);
+        createPriorityMarker(user.coords, index)
+            .bindPopup(`<b>Priority ${index+1}</b><br>${user.address}`)
+            .addTo(routeLayer);
     });
 
-    L.polyline(pathCoords, {
-        color: '#ff4444',
-        weight: 3,
-        dashArray: '5,5'
-    }).addTo(routeLayer);
+    
+    const waypoints = [DISASTER_STATION.coords, ...users.map(u => u.coords)];
+    
+    
+    const routeCoords = await getRoute(waypoints);
+    
+    if (routeCoords) {
+        
+        const latLngs = routeCoords.map(coord => [coord[1], coord[0]]);
+        
+        L.polyline(latLngs, {
+            color: '#ff4444',
+            weight: 4,
+            opacity: 0.7,
+            lineJoin: 'round'
+        }).addTo(routeLayer);
+    } else {
+        
+        const pathCoords = [DISASTER_STATION.coords, ...users.map(u => u.coords)];
+        L.polyline(pathCoords, {
+            color: '#ff4444',
+            weight: 3,
+            dashArray: '5,5'
+        }).addTo(routeLayer);
+    }
 
+   
     const bounds = L.latLngBounds([
         DISASTER_STATION.coords,
         ...users.map(u => u.coords)
@@ -503,7 +559,9 @@ function showPriorityList() {
     window.scrollTo(0, document.body.scrollHeight);
 }
 
-// Initialize the application
+  
+
+
 window.onload = function() {
     initMap();
     
