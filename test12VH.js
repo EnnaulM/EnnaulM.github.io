@@ -276,7 +276,7 @@ function processLocation(coords) {
     }).bindPopup('Your Location').addTo(map);
 
     marker.on('drag', constrainMarker); 
-
+    
     updateAddressFromMarker();
     document.getElementById('questionnaire-section').classList.remove('hidden');
     generateQuestionnaire();
