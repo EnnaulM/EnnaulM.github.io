@@ -1,0 +1,5 @@
+[build]
+  publish = "/"  # Your HTML/CSS/JS files are in the root directory
+
+[functions]
+  directory = "netlify/functions"  # Where our serverless functions live
