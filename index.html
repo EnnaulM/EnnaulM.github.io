@@ -1,1 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRRR - Client Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #566573;
+            --border: #e0e0e0;
+            --bot-primary: #3498db;
+            --bot-secondary: #2980b9;
+            --bot-success: #27ae60;
+            --bot-bg: #e8f4fc;
+            --bot-user-bg: #e6f7ff;
+            --bot-error: #e74c3c;
+            --bot-warning: #f39c12;
+        }
 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            scroll-behavior: smooth;
+        }
+
+        /* Header - Updated to match admin */
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .mobile-menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .nav-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: white;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .dropdown-content a {
+            color: var(--text-primary);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: var(--light-bg);
+        }
+
+        .nav-dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 90px 15px 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--border);
+            padding: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+        
+        #gap {
+            display: grid;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        #address-section input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--card-bg);
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .button2 {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .button2 i {
+            margin-right: 8px;
+        }
+
+        .button2:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        #map {
+            height: 400px;
+            border-radius: 8px;
+            margin-top: 20px;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .success-message {
+            text-align: center;
+            padding: 20px;
+            background: rgba(39, 174, 96, 0.1);
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid rgba(39, 174, 96, 0.3);
+        }
+        
+        .success-message h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--success);
+        }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            margin-top: 30px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Confirmation Section */
+        #confirmation-section {
+            margin-top: 20px;
+            text-align: center;
+            padding: 15px;
+            background: var(--light-bg);
+            border-radius: 8px;
+        }
+        
+        #confirmation-section p {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: var(--text-primary);
+        }
+        
+        #confirm-btn {
+            background: var(--success);
+        }
+        
+        #confirm-btn:hover {
+            background: #219653;
+        }
+
+        /* Chatbot Styles */
+        #chatbot-container {
+            width: 100%;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 60vh;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+        }
+        
+        #chat-header {
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: relative;
+        }
+        
+        #chat-header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        #chat-header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #fafbff;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 12px;
+            border-radius: 12px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+            color: #333;
+            font-size: 0.95rem;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .bot-message {
+            background: var(--bot-bg);
+            border-bottom-left-radius: 5px;
+            align-self: flex-start;
+        }
+        
+        .user-message {
+            background: var(--bot-user-bg);
+            border-bottom-right-radius: 5px;
+            align-self: flex-end;
+        }
+        
+        .system-message {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            align-self: center;
+            text-align: center;
+            padding: 10px 15px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            max-width: 90%;
+        }
+        
+        .error-message {
+            background: #fff0f3;
+            border: 1px solid var(--bot-error);
+            color: var(--bot-error);
+        }
+        
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            background: var(--bot-bg);
+            border-radius: 12px;
+            align-self: flex-start;
+            width: 80px;
+        }
+        
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--primary);
+            margin: 0 3px;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+        
+        .options-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .option-btn {
+            background: white;
+            border: 1px solid var(--secondary);
+            color: var(--secondary);
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        
+        .option-btn:hover {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .option-btn.selected {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .action-btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: #2980b9;
+        }
+        
+        .result-container {
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 12px;
+            border-left: 4px solid var(--success);
+        }
+        
+        .result-title {
+            color: var(--secondary);
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        
+        .result-description {
+            line-height: 1.5;
+            color: #444;
+            font-size: 0.9rem;
+        }
+        
+        .progress-container {
+            padding: 0 15px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .progress-bar {
+            flex: 1;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--success);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            min-width: 40px;
+            text-align: right;
+        }
+        
+        .restart-btn {
+            background: var(--warning);
+            color: #333;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            display: block;
+            margin: 15px auto;
+            transition: background 0.2s;
+        }
+        
+        .restart-btn:hover {
+            background: #e67e22;
+        }
+        
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            flex-direction: column;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid var(--secondary);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+           100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 80px 10px 10px;
+            }
+            
+            #chatbot-container {
+                height: 90vh;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            #map {
+                height: 300px;
+            }
+        }
+       
+        #hazard-map-canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header - Updated to match admin -->
+    <div class="header">
+        <div class="header-content">
+            <h1>DRRR Client</h1>
+            <div class="nav-dropdown">
+                <button class="mobile-menu-btn" id="navDropdown">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="dropdown-content">
+                    <a href="client.html">Client</a>
+                    <a href="admin.html">Admin</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h2>Location Information</h2>
+            </div>
+            
+            <div class="card-body">
+                <div id="address-section">
+                    <input type="text" id="address" placeholder="Enter your address...">
+                    <div id="gap">
+                        <button class="button2" onclick="searchAddress()"><i class="bi bi-search"></i> Search Location</button>
+                        <button class="button2" onclick="getCurrentLocation()"><i class="bi bi-geo-alt"></i> Use Current Location</button>
+                    </div>
+                </div>
+                
+                <canvas id="hazard-map-canvas"></canvas>
+                <div id="map"></div>
+                
+                <div id="confirmation-section" class="hidden">
+                    <p>Is this your correct location?</p>
+                    <button id="confirm-btn" class="button2" onclick="confirmLocation()"><i class="bi bi-check-circle"></i> Confirm Location</button>
+                </div>
+            </div>
+        </div>
+            
+        <div id="questionnaire-section" class="hidden">
+            <div class="card">
+                <div class="card-body">
+                    <div id="chatbot-container">
+                        <div id="chat-header">
+                            <h1>Vulnerability Assessment</h1>
+                        </div>
+                        
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill"></div>
+                            </div>
+                            <div class="progress-text" id="progress-text">0%</div>
+                        </div>
+                        
+                        <div class="chat-container" id="chat-container">
+                            <!-- Chat messages will appear here -->
+                        </div>
+                    </div>
+                    
+                    <button class="button2" onclick="submitAssessment()" style="margin-top: 20px; width: 100%;" id="submit-btn" class="hidden"><i class="bi bi-send"></i> Submit Assessment</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="success-section" class="hidden">
+            <div class="card">
+                <div class="card-body">
+                    <div class="success-message">
+                        <h3>Thank You For Your Submission :)</h3>
+                        <button onclick="resetForm()" style="margin-top: 20px;" class="button2"><i class="bi bi-plus-circle"></i> Submit Another Assessment</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>DRRR</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Constants
+        
+        const DISASTER_STATION = {
+            name: "Disaster Response Station",
+            coords: [16.41639, 120.59306]
+        };
+
+        // Variables
+        let map, marker, userCoords, vicinityCircle, userAddress;
+        const MAX_VICINITY_RADIUS = 500;
+        let vulnerabilityScore = null;
+        
+
+// Hazard map and transformation variables
+        let hazardMapCanvas, hazardMapCtx;
+        let hazardMapImage = new Image();
+        let hazardLevel = 1;
+
+        // Define hazard color mapping
+        const hazardColorMap = {
+            '139,0,0': 5,    // Dark red
+            '255,0,0': 4,    // Red
+            '238,130,238': 3, // Violet
+            '255,255,0': 2,  // Yellow
+            '128,128,128': 1 // Gray
+        };
+
+        // Affine transformation coefficients
+        const forwardCoefficients = {
+            a: 3.60038272e-5,
+            b: 1.58277974e-11,
+            c: 1.20530339e+2,   // x-translation
+            d: -1.73472348e-18,
+            e: -3.58937955e-5,
+            f: 1.64543041e+1    // y-translation
+        };
+
+        // Inverse coefficients for geo to pixel transformation
+        const inverseCoefficients = {
+            a: 2.77744638e+4,   // longitude to x
+            b: 1.45640690e-2,   // latitude to x
+            c: -3.34766569e+6,  // x constant
+            d: 1.70033425e-4,   // longitude to y
+            e: -2.78596040e+4,  // latitude to y
+            f: 4.58410439e+5    // y constant
+        };
+
+        // Function to convert geographic coordinates to pixel coordinates
+        function geoToPixel(lon, lat) {
+            // First, subtract the translation (C, F)
+            const xTranslated = lon - forwardCoefficients.c;
+            const yTranslated = lat - forwardCoefficients.f;
+
+            // Then, multiply by the inverse matrix
+            const xPixel = inverseCoefficients.a * xTranslated + inverseCoefficients.b * yTranslated;
+            const yPixel = inverseCoefficients.d * xTranslated + inverseCoefficients.e * yTranslated;
+
+            return { x: xPixel, y: yPixel };
+        }
+
+        // Function to get hazard level from RGB color
+        function getHazardLevelFromRGB(rgb) {
+            const rgbString = rgb.join(',');
+            
+            // Find the closest matching color
+            for (const [color, level] of Object.entries(hazardColorMap)) {
+                if (rgbString === color) {
+                    return level;
+                }
+            }
+            
+            // If no exact match, find the closest color by Euclidean distance
+            let minDistance = Infinity;
+            let closestLevel = 1;
+            
+            for (const [color, level] of Object.entries(hazardColorMap)) {
+                const [r1, g1, b1] = color.split(',').map(Number);
+                const [r2, g2, b2] = rgb;
+                
+                const distance = Math.sqrt(
+                    Math.pow(r2 - r1, 2) + 
+                    Math.pow(g2 - g1, 2) + 
+                    Math.pow(b2 - b1, 2)
+                );
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestLevel = level;
+                }
+            }
+            
+            return closestLevel;
+        }
+
+        // Function to calculate hazard level based on coordinates
+        function calculateHazardLevel(lon, lat) {
+            if (!hazardMapCtx) return 1;
+            
+            try {
+                const pixelCoord = geoToPixel(lon, lat);
+                
+                // Round to the nearest integer to get a discrete pixel
+                const x = Math.round(pixelCoord.x);
+                const y = Math.round(pixelCoord.y);
+                
+                // Get the color from the canvas at (x, y)
+                const pixelData = hazardMapCtx.getImageData(x, y, 1, 1).data;
+                const rgb = [pixelData[0], pixelData[1], pixelData[2]];
+                
+                return getHazardLevelFromRGB(rgb);
+            } catch (error) {
+                console.error("Error calculating hazard level:", error);
+                return 1; // Default to lowest hazard level on error
+            }
+        }
+        
+        // Questionnaire data
+        const questionnaire = [
+            {
+                id: "construction",
+                question: "What is the main construction material of your building?",
+                options: [
+                    { text: "Sand/Clay/Straw/Fabric", scores: { vulnerability: 5 } },
+                    { text: "Wood/Glass", scores: { vulnerability: 4 } },
+                    { text: "Rock/Brick", scores: { vulnerability: 3 } },
+                    { text: "Reinforced Concrete/Structural Steel", scores: { vulnerability: 2 } },
+                    { text: "Engineered Composite Material", scores: { vulnerability: 1 } }
+                ],
+                validation: (input) => input.length > 0,
+                errorMsg: "Please select a construction material"
+            },
+            {
+                id: "roof",
+                question: "What is the condition of your roof?",
+                options: [
+                    { text: "Collapsing", scores: { vulnerability: 5 } },
+                    { text: "Severe Leaks", scores: { vulnerability: 4 } },
+                    { text: "Leaking", scores: { vulnerability: 3 } },
+                    { text: "Intact but Aging", scores: { vulnerability: 2 } },
+                    { text: "Storm Proof", scores: { vulnerability: 1 } }
+                ],
+                validation: (input) => input.length > 0,
+                errorMsg: "Please select a roof condition"
+            },
+            {
+                id: "cracks",
+                question: "Are there cracks in your walls or foundation?",
+                options: [
+                    { text: "Severe", scores: { vulnerability: 5 } },
+                    { text: "Large cracks", scores: { vulnerability: 4 } },
+                    { text: "Minor", scores: { vulnerability: 3 } },
+                    { text: "Very Minor", scores: { vulnerability: 2 } },
+                    { text: "No Visible Cracks", scores: { vulnerability: 1 } }
+                ],
+                validation: (input) => input.length > 0,
+                errorMsg: "Please select an option"
+            },
+            {
+                id: "proximity",
+                question: "How close is your building to the nearest hazard?",
+                options: [
+                    { text: "Less than 100m", scores: { vulnerability: 5 } },
+                    { text: "100m - 300m", scores: { vulnerability: 4 } },
+                    { text: "About 500m", scores: { vulnerability: 3 } },
+                    { text: "1km - 2km", scores: { vulnerability: 2 } },
+                    { text: "More than 2km", scores: { vulnerability: 1 } }
+                ],
+                validation: (input) => input.length > 0,
+                errorMsg: "Please select a distance"
+            },
+            {
+                id: "electricity",
+                question: "How reliable is your electricity supply?",
+                options: [
+                    { text: "Daily Outages", scores: { vulnerability: 5 } },
+                    { text: "Weekly Outages", scores: { vulnerability: 4 } },
+                    { text: "Monthly Outages", scores: { vulnerability: 3 } },
+                    { text: "Rare Outages", scores: { vulnerability: 2 } },
+                    { text: "Never Fails", scores: { vulnerability: 1 } }
+                ],
+                validation: (input) => input.length > 0,
+                errorMsg: "Please select an option"
+            }
+        ];
+
+        // Recommendations
+        const recommendations = {
+            high: {
+                title: "High Vulnerability",
+                description: "You have high vulnerability to disasters. We recommend improving your household structure and learning preparedness measures"
+            },
+            medium: {
+                title: "Medium Vulnerability",
+                description: "Some improvements are recommended..."
+            },
+            low: {
+                title: "Low Vulnerability",
+                description: "Maintain current safety standards and continue regular maintenance."
+            }
+        };
+
+        // Chatbot variables
+        let currentQuestion = 0;
+        const userScores = { vulnerability: 0 };
+        const userAnswers = [];
+        let isTyping = false;
+
+        // DOM elements
+        const chatContainer = document.getElementById('chat-container');
+        const progressFill = document.getElementById('progress-fill');
+        const progressText = document.getElementById('progress-text');
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView(DISASTER_STATION.coords, 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            L.marker(DISASTER_STATION.coords)
+                .bindPopup(DISASTER_STATION.name)
+                .addTo(map)
+                .openPopup();
+        }
+
+        // Constrain marker movement
+        function constrainMarker(e) {
+            const center = L.latLng(userCoords); 
+            const newPos = e.target.getLatLng();
+            const distance = center.distanceTo(newPos);
+
+            if (distance > MAX_VICINITY_RADIUS) {
+                const centerPoint = map.project(center);
+                const newPoint = map.project(newPos);
+                const vector = newPoint.subtract(centerPoint);
+                const scaledVector = vector.multiplyBy(MAX_VICINITY_RADIUS * 0.9 / distance);
+                const boundedPoint = centerPoint.add(scaledVector);
+                const boundedLatLng = map.unproject(boundedPoint);
+                e.target.setLatLng(boundedLatLng);
+            }
+        }
+
+        // Update address from marker position
+        async function updateAddressFromMarker() {
+            if (!marker) return;
+            const newCoords = marker.getLatLng();
+            userCoords = [newCoords.lat, newCoords.lng];
+            
+            try {
+                const response = await fetch(`https://api.geoapify.com/v1/geocode/reverse?lat=${newCoords.lat}&lon=${newCoords.lng}&apiKey=${GEOAPIFY_API_KEY}`);
+                const data = await response.json();
+                
+                if (data.features && data.features.length > 0) {
+                    userAddress = data.features[0].properties.formatted;
+                }
+            } catch (error) {
+                console.error("Reverse geocoding error:", error);
+            }
+            document.getElementById('address').value = userAddress || 'Location updated';
+        }
+
+        // Process location
+        function processLocation(coords) {
+            map.setView(coords, 16);
+            userCoords = coords;  
+
+            if (marker) map.removeLayer(marker);
+            if (vicinityCircle) map.removeLayer(vicinityCircle);
+
+            vicinityCircle = L.circle(coords, {
+                color: '#3498db',
+                fillColor: '#2980b9',
+                fillOpacity: 0.2,
+                radius: MAX_VICINITY_RADIUS
+            }).addTo(map);
+
+            marker = L.marker(coords, {
+                draggable: true,
+                autoPan: true
+            }).bindPopup('Your Location').addTo(map);
+
+            marker.on('drag', constrainMarker);
+            marker.on('dragend', updateAddressFromMarker);
+            
+            updateAddressFromMarker();
+            
+            document.getElementById('confirmation-section').classList.remove('hidden');
+        }
+
+        // Confirm location
+        function confirmLocation() {
+            hazardLevel = calculateHazardLevel(userCoords[1], userCoords[0]);
+            document.getElementById('confirmation-section').classList.add('hidden');
+            document.getElementById('questionnaire-section').classList.remove('hidden');
+            initChatbot();
+        }
+
+        // Search address
+        // Replace your current searchAddress function with this:
+async function searchAddress() {
+  const addressInput = document.getElementById('address').value;
+  if (!addressInput) return;
+  
+  try {
+    // Show loading state
+    document.getElementById('address').disabled = true;
+    
+    // Call our Netlify function instead of direct API
+    const response = await fetch(`/.netlify/functions/geocode?address=${encodeURIComponent(addressInput)}`);
+    const data = await response.json();
+    
+    if (data.features && data.features.length > 0) {
+      userCoords = [
+        data.features[0].properties.lat, 
+        data.features[0].properties.lon
+      ];
+      userAddress = data.features[0].properties.formatted;
+      processLocation(userCoords);
+    }
+  } catch (error) {
+    console.error("Error fetching address:", error);
+    alert("Could not find the address. Please try again.");
+  } finally {
+    document.getElementById('address').disabled = false;
+  }
+}
+        // Get current location
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        userCoords = [position.coords.latitude, position.coords.longitude];
+                        processLocation(userCoords);
+                    },
+                    error => {
+                        alert("Unable to get your location. Please enter your address manually.");
+                        console.error("Geolocation error:", error);
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        // Calculate distance
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; 
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Submit assessment
+        function submitAssessment() {
+            if (vulnerabilityScore === null) {
+                alert("Please complete the vulnerability assessment first.");
+                return;
+            }
+            
+            const hazard = hazardLevel;
+            const riskValue = (vulnerabilityScore + hazard) / 2;
+            
+            const distance = calculateDistance(
+                userCoords[0], 
+                userCoords[1],
+                DISASTER_STATION.coords[0],
+                DISASTER_STATION.coords[1]
+            );
+
+            const submission = {
+                address: userAddress,
+                coords: userCoords,
+                vulnerability: vulnerabilityScore.toFixed(2),
+                hazard: hazard.toFixed(2),
+                risk: riskValue.toFixed(2),
+                distance: distance,
+                timestamp: new Date().toISOString()
+            };
+
+            let submissions = JSON.parse(localStorage.getItem('vulnerabilitySubmissions')) || [];
+            submissions.push(submission);
+            localStorage.setItem('vulnerabilitySubmissions', JSON.stringify(submissions));
+            
+            document.getElementById('questionnaire-section').classList.add('hidden');
+            document.getElementById('success-section').classList.remove('hidden');
+            document.getElementById('address').value = '';
+        }    
+        
+        // Reset form
+        function resetForm() {
+            document.getElementById('address').value = '';
+            document.getElementById('success-section').classList.add('hidden');
+            document.getElementById('questionnaire-section').classList.add('hidden');
+            document.getElementById('confirmation-section').classList.add('hidden');
+            
+            if (marker) map.removeLayer(marker);
+            if (vicinityCircle) map.removeLayer(vicinityCircle);
+            
+            marker = null;
+            vicinityCircle = null;
+            userCoords = null;
+            userAddress = null;
+            vulnerabilityScore = null;
+            
+            currentQuestion = 0;
+            userScores.vulnerability = 0;
+            userAnswers.length = 0;
+            document.getElementById('chat-container').innerHTML = '';
+            document.getElementById('submit-btn').classList.add('hidden');
+            updateProgress();
+        }
+
+        // Initialize chatbot
+        function initChatbot() {
+            displayMessage('bot', `Hello! I'm here to assess your vulnerability to disasters. I'll only ask you a few questions. Let's get started! Your hazard level is ${hazardLevel} and your location is ${userCoords}`);
+            setTimeout(() => showQuestion(), 1500);
+        }
+
+        // Display message
+        function displayMessage(sender, text, isError = false) {
+            const messageDiv = document.createElement('div');
+            
+            if (isError) {
+                messageDiv.className = 'message system-message error-message';
+                messageDiv.textContent = text;
+            } else if (sender === 'system') {
+                messageDiv.className = 'message system-message';
+                messageDiv.textContent = text;
+            } else {
+                messageDiv.className = `message ${sender}-message`;
+                messageDiv.textContent = text;
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            if (isTyping) return;
+            
+            isTyping = true;
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+            
+            chatContainer.appendChild(typingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            isTyping = false;
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // Show question
+        function showQuestion() {
+            if (currentQuestion >= questionnaire.length) {
+                showResult();
+                return;
+            }
+            
+            updateProgress();
+            
+            const existingOptions = chatContainer.querySelector('.options-container');
+            if (existingOptions) {
+                existingOptions.remove();
+            }
+            
+            const q = questionnaire[currentQuestion];
+            displayMessage('bot', q.question);
+            
+            const optionsDiv = document.createElement('div');
+            optionsDiv.className = 'options-container';
+            
+            q.options.forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'option-btn';
+                button.textContent = option.text;
+                button.onclick = () => handleOptionSelect(option);
+                optionsDiv.appendChild(button);
+            });
+            
+            if (currentQuestion > 0) {
+                const backButton = document.createElement('button');
+                backButton.className = 'action-btn';
+                backButton.textContent = '← Back to Previous';
+                backButton.onclick = goBack;
+                optionsDiv.appendChild(backButton);
+            }
+            
+            chatContainer.appendChild(optionsDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Handle option selection
+        function handleOptionSelect(option) {
+            const q = questionnaire[currentQuestion];
+            
+            const optionsContainer = chatContainer.querySelector('.options-container');
+            if (optionsContainer) {
+                optionsContainer.remove();
+            }
+            
+            if (!q.validation(option.text)) {
+                displayMessage('system', q.errorMsg, true);
+                return;
+            }
+            
+            userAnswers.push({
+                question: q.question,
+                answer: option.text
+            });
+            
+            for (const [key, value] of Object.entries(option.scores)) {
+                userScores[key] += value;
+            }
+            
+            displayMessage('user', option.text);
+            
+            currentQuestion++;
+            
+            setTimeout(() => {
+                showTypingIndicator();
+                setTimeout(() => {
+                    hideTypingIndicator();
+                    showQuestion();
+                }, 1000);
+            }, 500);
+        }
+
+        // Go back to previous question
+        function goBack() {
+            if (currentQuestion === 0) return;
+            
+            const lastAnswer = userAnswers.pop();
+            if (!lastAnswer) return;
+            
+            const prevQuestionIndex = currentQuestion - 1;
+            const q = questionnaire[prevQuestionIndex];
+            
+            const selectedOption = q.options.find(opt => opt.text === lastAnswer.answer);
+            if (selectedOption) {
+                for (const [key, value] of Object.entries(selectedOption.scores)) {
+                    userScores[key] -= value;
+                }
+            }
+            
+            currentQuestion = prevQuestionIndex;
+            
+            const messages = chatContainer.querySelectorAll('.message, .options-container');
+            for (let i = 0; i < 2; i++) {
+                if (messages.length > 0) {
+                    messages[messages.length - 1].remove();
+                }
+            }
+            
+            showQuestion();
+        }
+
+        // Show result
+        function showResult() {
+            updateProgress();
+            
+            const averageScore = userScores.vulnerability / questionnaire.length;
+            vulnerabilityScore = averageScore; 
+            
+            let vulnerabilityLevel;
+            if (averageScore >= 4) {
+                vulnerabilityLevel = 'high';
+            } else if (averageScore >= 2.5) {
+                vulnerabilityLevel = 'medium';
+            } else {
+                vulnerabilityLevel = 'low';
+            }
+            
+            const recommendation = recommendations[vulnerabilityLevel];
+            
+            showTypingIndicator();
+            setTimeout(() => {
+                hideTypingIndicator();
+                displayMessage('bot', "Thanks for answering all the questions!");
+                displayMessage('bot', "Based on your responses, here's our assessment:");
+                
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'result-container';
+                resultDiv.innerHTML = `
+                    <div class="result-title">${recommendation.title}</div>
+                    <div class="result-description">
+                        <p><strong>Vulnerability Score:</strong> ${averageScore.toFixed(2)}/5</p>
+                        <p>${recommendation.description}</p>
+                    </div>
+                `;
+                chatContainer.appendChild(resultDiv);
+                
+                document.getElementById('submit-btn').classList.remove('hidden');
+                
+                const restartBtn = document.createElement('button');
+                restartBtn.className = 'restart-btn';
+                restartBtn.textContent = 'Restart Assessment';
+                restartBtn.onclick = () => {
+                    currentQuestion = 0;
+                    userScores.vulnerability = 0;
+                    userAnswers.length = 0;
+                    vulnerabilityScore = null;
+                    document.getElementById('submit-btn').classList.add('hidden');
+                    chatContainer.innerHTML = '';
+                    displayMessage('bot', "Hello! I'm here to assess your vulnerability to disasters. I'll only ask you a few questions. Let's get started!");
+                    setTimeout(() => showQuestion(), 1500);
+                };
+                chatContainer.appendChild(restartBtn);
+                
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 1500);
+        }
+
+        // Update progress
+        function updateProgress() {
+            const progress = Math.min(100, Math.round((currentQuestion / questionnaire.length) * 100));
+            progressFill.style.width = `${progress}%`;
+            progressText.textContent = `${progress}%`;
+        }
+
+        // Handle dropdown menu
+        document.getElementById('navDropdown').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = document.querySelector('.dropdown-content');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                dropdown.style.display = 'block';
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.matches('.mobile-menu-btn') && !e.target.closest('.nav-dropdown')) {
+                document.querySelector('.dropdown-content').style.display = 'none';
+            }
+        });
+
+        // Initialize on load
+        window.onload = function() {
+            initMap();
+            
+             // Initialize hazard map canvas
+            hazardMapCanvas = document.getElementById('hazard-map-canvas');
+            hazardMapCtx = hazardMapCanvas.getContext('2d');
+            
+            // Load the hazard map image
+            hazardMapImage.onload = function() {
+                // Set canvas size to match image
+                hazardMapCanvas.width = hazardMapImage.width;
+                hazardMapCanvas.height = hazardMapImage.height;
+                
+                // Draw the image on canvas
+                hazardMapCtx.drawImage(hazardMapImage, 0, 0);
+            };
+            
+            // Set the source of the hazard map image (replace with your actual hazard map URL)
+            hazardMapImage.src = 'hazard_map.png';
+            
+            
+        };
+    </script>
+</body>
+</html>
