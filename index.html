@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRRR - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --light-bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #566573;
+            --border: #e0e0e0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            scroll-behavior: smooth;
+        }
+
+        /* Header */
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .mobile-menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 20px 15px;
+        }
+
+        /* Cards - UPDATED */
+        .card {
+            background: var(--card-bg);
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px; /* Only bottom margin for consistent spacing */
+            transition: transform 0.2s, box-shadow 0.2s;
+            /* Removed height: 100% to allow content-based sizing */
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--border);
+            padding: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        /* Map */
+        #map {
+            height: 300px;
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        /* Lists */
+        .list-container {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .list-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            background: var(--light-bg);
+            border-radius: 8px;
+            border-left: 4px solid var(--secondary);
+            transition: all 0.2s;
+        }
+
+        .list-item:hover {
+            background: #e8f4fc;
+        }
+
+        .list-item.high-priority {
+            border-left-color: var(--danger);
+        }
+
+        .list-item.medium-priority {
+            border-left-color: var(--warning);
+        }
+
+        .list-item.low-priority {
+            border-left-color: var(--success);
+        }
+
+        .item-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .item-details {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .delete-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .stat-card {
+            background: var(--light-bg);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 5px 0;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn-primary {
+            background: var(--secondary);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            border: none;
+        }
+
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 15px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+            background: var(--card-bg);
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            flex-direction: column;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Priority indicators */
+        .priority-badge {
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-top: 5px;
+            display: inline-block;
+        }
+
+        .priority-high {
+            background: rgba(231, 76, 60, 0.2);
+            color: var(--danger);
+        }
+
+        .priority-medium {
+            background: rgba(243, 156, 18, 0.2);
+            color: var(--warning);
+        }
+
+        .priority-low {
+            background: rgba(39, 174, 96, 0.2);
+            color: var(--success);
+        }
+
+        /* Empty state - UPDATED */
+        .empty-state {
+            text-align: center;
+            padding: 20px 15px; /* Reduced padding for empty state */
+            color: var(--text-secondary);
+        }
+        
+        .empty-state i {
+            font-size: 2rem; /* Slightly smaller icon */
+            margin-bottom: 10px;
+            color: #d0d0d0;
+        }
+        
+        .empty-state p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        /* Fixed Header */
+        .header {
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        /* Adjust main content to account for fixed header */
+        .main-content {
+            padding-top: 80px; /* Height of header + some extra space */
+        }
+
+        /* NEW: Right column layout improvements */
+        .right-column-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px; /* Consistent gap between cards */
+        }
+
+        /* Ensure list containers adjust to content */
+        .list-container:empty {
+            min-height: 0;
+        }
+
+        /* Card body adjustments for empty states */
+        .card-body:has(.empty-state) {
+            padding: 10px 15px; /* Reduced padding when empty */
+        }
+        
+        .nav-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: white;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .dropdown-content a {
+            color: var(--text-primary);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: var(--light-bg);
+        }
+
+        .nav-dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        @media (min-width: 992px) {
+            .nav-dropdown:hover .dropdown-content {
+                display: block;
+            }
+            
+            .main-content {
+                padding-top: 90px;
+            }
+            
+            .btn {
+                width: auto;
+                margin-right: 10px;
+                margin-bottom: 0;
+            }
+            
+            .action-bar {
+                display: flex;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            #map {
+                height: 400px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+            }
+            
+            .main-content {
+                padding: 25px 20px;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .main-content {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a5a5a5;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <h1>DRRR Admin</h1>
+            <div class="nav-dropdown">
+                <button class="mobile-menu-btn" id="navDropdown">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="dropdown-content">
+                    <a href="client.html">Client</a>
+                    <a href="admin.html">Admin</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <span id="dashboard-section" class="section-anchor"></span>
+        
+        <div class="row">
+            <!-- Left Column -->
+            <div class="col-lg-8">
+                <!-- Map Card -->
+                <div class="card">
+                    <span id="vulnerability-map-section" class="section-anchor"></span>
+                    <div class="card-header">
+                        Vulnerability Map
+                    </div>
+                    <div class="card-body">
+                        <div id="map"></div>
+                        <div class="action-bar mt-3">
+                            <button class="btn btn-primary" onclick="generatePriorityRoute()">
+                                <i class="bi bi-geo-alt"></i> Generate Route
+                            </button>
+                            <button class="btn btn-warning" onclick="clearMap()">
+                                <i class="bi bi-x-circle"></i> Clear Map
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - UPDATED with container for proper spacing -->
+            <div class="col-lg-4 right-column-container">
+                <!-- Stats Card -->
+                <div class="card">
+                    <div class="card-header">
+                        Overview
+                    </div>
+                    <div class="card-body">
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-label">Total Assessments</div>
+                                <div class="stat-value" id="total-assessments">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Avg. Vulnerability</div>
+                                <div class="stat-value" id="avg-vulnerability">0.0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Avg. <br> Risk</div>
+                                <div class="stat-value" id="avg-risk">0.0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submissions Card -->
+                <div class="card">
+                    <span id="submissions-section" class="section-anchor"></span>
+                    <div class="card-header">
+                        Recent Submissions
+                        <button class="btn btn-sm btn-danger" onclick="deleteAllSubmissions()">
+                            <i class="bi bi-trash"></i> Clear All
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="submissions-list" class="list-container"></div>
+                    </div>
+                </div>
+
+                <!-- Priority List Card -->
+                <div class="card">
+                    <span id="priority-list-section" class="section-anchor"></span>
+                    <div class="card-header">
+                        Priority List
+                    </div>
+                    <div class="card-body">
+                        <div id="priority-list" class="list-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>DRRR</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        const DISASTER_STATION = {
+            name: "Disaster Response Station",
+            coords: [16.41639, 120.59306]
+        };
+        
+        let map, submissions = [], routeLayer = L.layerGroup();
+        let currentRoute = null;
+
+        // Add this JavaScript to handle mobile navigation if needed
+        document.getElementById('navDropdown').addEventListener('click', function() {
+            const dropdown = document.querySelector('.dropdown-content');
+            if (dropdown.style.display === 'block') {
+                dropdown.style.display = 'none';
+            } else {
+                dropdown.style.display = 'block';
+            }
+        });
+
+        // OSRM Routing Function
+        async function getRoute(waypoints) {
+            const waypointsStr = waypoints.map(wp => `${wp[1]},${wp[0]}`).join(';');
+            const url = `https://router.project-osrm.org/route/v1/driving/${waypointsStr}?overview=full&geometries=geojson`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.code === 'Ok') {
+                    return data.routes[0].geometry.coordinates;
+                }
+                return null;
+            } catch (error) {
+                console.error('Routing error:', error);
+                return null;
+            }
+        }
+
+        function initMap() {
+            map = L.map('map').setView(DISASTER_STATION.coords, 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            L.marker(DISASTER_STATION.coords)
+                .bindPopup(DISASTER_STATION.name)
+                .addTo(map)
+                .openPopup();
+            
+            routeLayer.addTo(map);
+        }
+
+        function showLoading(message) {
+            const overlay = document.createElement('div');
+            overlay.className = 'loading-overlay';
+            overlay.innerHTML = `
+                <div class="spinner"></div>
+                <div>${message}</div>
+            `;
+            document.body.appendChild(overlay);
+            return overlay;
+        }
+
+        function hideLoading(overlay) {
+            if (overlay && overlay.parentNode) {
+                overlay.parentNode.removeChild(overlay);
+            }
+        }
+
+        function loadSubmissions() {
+            submissions = JSON.parse(localStorage.getItem('vulnerabilitySubmissions')) || [];
+            updateRecords();
+            updateStats();
+            plotSubmissions();
+            generatePriorityList();
+        }
+
+        function plotSubmissions() {
+            routeLayer.clearLayers();
+            
+            L.marker(DISASTER_STATION.coords)
+                .bindPopup(DISASTER_STATION.name)
+                .addTo(routeLayer);
+            
+            submissions.forEach((submission, index) => {
+                L.marker(submission.coords)
+                    .bindPopup(`
+                        <b>${submission.address}</b><br>
+                        Vulnerability: ${submission.vulnerability}<br>
+                        Risk: ${submission.risk}<br>
+                        Distance: ${submission.distance.toFixed(2)} km
+                    `)
+                    .addTo(routeLayer);
+            });
+            
+            if (submissions.length > 0) {
+                const bounds = L.latLngBounds([DISASTER_STATION.coords]);
+                submissions.forEach(sub => bounds.extend(sub.coords));
+                map.fitBounds(bounds.pad(0.1));
+            }
+        }
+
+        function updateRecords() {
+            const container = document.getElementById('submissions-list');
+            container.innerHTML = '';
+            
+            if (submissions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p>No submissions yet</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            submissions.forEach((user, index) => {
+                const listItem = document.createElement('div');
+                listItem.className = 'list-item';
+                
+                let riskClass = 'medium-priority';
+                if (user.risk > 3.5) riskClass = 'high-priority';
+                else if (user.risk < 2) riskClass = 'low-priority';
+                
+                listItem.className = `list-item ${riskClass}`;
+                
+                listItem.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="item-title">${user.address.substring(0, 35)}...</div>
+                            <div class="item-details">
+                                <div>Vulnerability: ${user.vulnerability} | Risk: ${user.risk}</div>
+                                <div>Distance: ${user.distance.toFixed(2)} km</div>
+                            </div>
+                        </div>
+                        <button class="delete-btn ms-2" onclick="deleteSubmission(${index})">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                `;
+                
+                listItem.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('delete-btn')) {
+                        map.setView(user.coords, 16);
+                    }
+                });
+                
+                container.appendChild(listItem);
+            });
+        }
+
+        function deleteSubmission(index) {
+            if (confirm("Are you sure you want to delete this submission?")) {
+                submissions.splice(index, 1);
+                localStorage.setItem('vulnerabilitySubmissions', JSON.stringify(submissions));
+                loadSubmissions();
+            }
+        }
+
+        function deleteAllSubmissions() {
+            if (confirm("Are you sure you want to delete ALL submissions? This cannot be undone.")) {
+                submissions = [];
+                localStorage.removeItem('vulnerabilitySubmissions');
+                loadSubmissions();
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('total-assessments').textContent = submissions.length;
+            
+            if (submissions.length > 0) {
+                const avgVuln = submissions.reduce((sum, user) => sum + parseFloat(user.vulnerability), 0) / submissions.length;
+                const avgRisk = submissions.reduce((sum, user) => sum + parseFloat(user.risk), 0) / submissions.length;
+                
+                document.getElementById('avg-vulnerability').textContent = avgVuln.toFixed(2);
+                document.getElementById('avg-risk').textContent = avgRisk.toFixed(2);
+            }
+        }
+
+        function generatePriorityList() {
+            const list = document.getElementById('priority-list');
+            list.innerHTML = '';
+            
+            if (submissions.length < 1) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <i class="bi bi-list-check"></i>
+                        <p>No submissions to prioritize</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const sortedSubmissions = [...submissions].sort((a, b) => {
+                const priorityA = parseFloat(a.risk) * 0.7 + (1 / a.distance) * 0.3;
+                const priorityB = parseFloat(b.risk) * 0.7 + (1 / b.distance) * 0.3;
+                return priorityB - priorityA;
+            });
+
+            sortedSubmissions.forEach((user, index) => {
+                const priorityScore = (parseFloat(user.risk) * 0.7 + (1 / user.distance) * 0.3).toFixed(2);
+                
+                let priorityClass = 'medium-priority';
+                let priorityText = 'Medium';
+                if (user.risk > 3.5) {
+                    priorityClass = 'high-priority';
+                    priorityText = 'High';
+                } else if (user.risk < 2) {
+                    priorityClass = 'low-priority';
+                    priorityText = 'Low';
+                }
+                
+                const listItem = document.createElement('div');
+                listItem.className = `list-item ${priorityClass}`;
+                
+                listItem.innerHTML = `
+                    <div class="item-title">#${index + 1}: ${user.address.substring(0, 30)}...</div>
+                    <div class="item-details">
+                        <div>Vulnerability: ${user.vulnerability} | Risk: ${user.risk}</div>
+                        <div>Distance: ${user.distance.toFixed(2)} km</div>
+                        <div class="mt-1">
+                            <span class="priority-badge priority-${priorityText.toLowerCase()}">${priorityText} Priority</span>
+                        </div>
+                    </div>
+                `;
+                
+                list.appendChild(listItem);
+            });
+        }
+
+        async function generatePriorityRoute() {
+            if (submissions.length < 1) {
+                alert("No submissions to generate route");
+                return;
+            }
+            
+            try {
+                const sortedSubmissions = [...submissions].sort((a, b) => {
+                    const priorityA = parseFloat(a.risk) * 0.7 + (1 / a.distance) * 0.3;
+                    const priorityB = parseFloat(b.risk) * 0.7 + (1 / b.distance) * 0.3;
+                    return priorityB - priorityA;
+                });
+
+                await plotRoute(sortedSubmissions);
+                generatePriorityList();
+            } catch (error) {
+                console.error("Route generation failed:", error);
+                alert("Failed to generate route. Please try again later.");
+            } 
+        }
+
+        async function plotRoute(sortedSubmissions) {
+            routeLayer.clearLayers();
+            
+            L.marker(DISASTER_STATION.coords)
+                .bindPopup(DISASTER_STATION.name)
+                .addTo(routeLayer);
+            
+            sortedSubmissions.forEach((user, index) => {
+                L.marker(user.coords, {
+                    icon: L.divIcon({
+                        className: 'priority-marker',
+                        html: `<div style="background: ${index === 0 ? '#e74c3c' : index === 1 ? '#f39c12' : '#3498db'};
+                                   width: 24px; 
+                                   height: 24px; 
+                                   border-radius: 50%; 
+                                   display: flex; 
+                                   justify-content: center; 
+                                   align-items: center; 
+                                   color: white;
+                                   font-weight: bold;
+                                   border: 2px solid white;
+                                   box-shadow: 0 0 8px rgba(0,0,0,0.5);">
+                              ${index + 1}
+                           </div>`,
+                        iconSize: [24, 24]
+                    })
+                }).bindPopup(`
+                    <b>Priority #${index + 1}</b><br>
+                    ${user.address}<br>
+                    Vulnerability: ${user.vulnerability}<br>
+                    Risk: ${user.risk}<br>
+                    Distance: ${user.distance.toFixed(2)} km
+                `).addTo(routeLayer);
+            });
+            
+            const waypoints = [DISASTER_STATION.coords, ...sortedSubmissions.map(user => user.coords)];
+            const routeGeometry = await getRoute(waypoints);
+            
+            if (routeGeometry) {
+                const latLngs = routeGeometry.map(coord => [coord[1], coord[0]]);
+                
+                currentRoute = L.polyline(latLngs, {
+                    color: '#ff4444',
+                    weight: 5,
+                    opacity: 0.9,
+                    lineJoin: 'round'
+                }).addTo(routeLayer);
+                
+                const totalDistance = calculateRouteDistance(latLngs);
+                currentRoute.bindPopup(`Priority Response Route<br>Total Distance: ${totalDistance.toFixed(2)} km`);
+                
+                const bounds = L.latLngBounds(latLngs);
+                map.fitBounds(bounds.pad(0.1));
+            } else {
+                alert("OSRM routing failed. Using straight-line path instead.");
+                const pathCoords = [DISASTER_STATION.coords];
+                sortedSubmissions.forEach(user => pathCoords.push(user.coords));
+                
+                currentRoute = L.polyline(pathCoords, {
+                    color: '#ff4444',
+                    weight: 1,
+                    dashArray: '5, 10',
+                    opacity: 0.7
+                }).addTo(routeLayer);
+                
+                const bounds = L.latLngBounds([DISASTER_STATION.coords]);
+                sortedSubmissions.forEach(sub => bounds.extend(sub.coords));
+                map.fitBounds(bounds.pad(0.1));
+            }
+        }
+
+        function calculateRouteDistance(latLngs) {
+            let totalDistance = 0;
+            for (let i = 1; i < latLngs.length; i++) {
+                totalDistance += map.distance(latLngs[i-1], latLngs[i]);
+            }
+            return totalDistance / 1000;
+        }
+
+        function clearMap() {
+            routeLayer.clearLayers();
+            currentRoute = null;
+            L.marker(DISASTER_STATION.coords)
+                .bindPopup(DISASTER_STATION.name)
+                .addTo(routeLayer);
+            map.setView(DISASTER_STATION.coords, 13);
+        }
+
+        window.onload = function() {
+            initMap();
+            loadSubmissions();
+        };
+    </script>
+</body>
+</html>
